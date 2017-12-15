@@ -15,7 +15,7 @@ class Property
     /**
      * @return string
      */
-    public function getName()
+    public function getName(): string
     {
         return $this->name;
     }
@@ -25,7 +25,7 @@ class Property
      * @param string $name
      * @return self
      */
-    public function setName($name)
+    public function setName($name): self
     {
         $this->name = $name;
         return $this;
@@ -35,7 +35,7 @@ class Property
     /**
      * @return string
      */
-    public function getValue()
+    public function getValue(): string
     {
         return $this->value;
     }
@@ -45,7 +45,7 @@ class Property
      * @param string $value
      * @return self
      */
-    public function setValue($value)
+    public function setValue($value): self
     {
         $this->value = $value;
         return $this;
