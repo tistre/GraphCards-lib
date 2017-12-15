@@ -46,8 +46,7 @@ class DbAdapter
 
         $transaction = $this->db->beginTransaction();
         $transaction->push($query, $bind);
-
-        // TODO: Add Monolog, log queries and errors
+        $this->db->logQuery($query, $bind);
 
         try {
             $resultCollection = $this->db->commit($transaction);
@@ -61,7 +60,7 @@ class DbAdapter
                 }
             }
         } catch (Neo4jExceptionInterface $exception) {
-            error_log($exception->getMessage());
+            $this->db->logException($exception);
             throw new \RuntimeException
             (
                 sprintf
@@ -164,11 +163,12 @@ class DbAdapter
         }
 
         $transaction->push($query, $bind);
+        $this->db->logQuery($query, $bind);
 
         try {
             $this->db->commit($transaction);
         } catch (Neo4jExceptionInterface $exception) {
-            error_log($exception->getMessage());
+            $this->db->logException($exception);
             throw new \RuntimeException
             (
                 sprintf
@@ -193,11 +193,12 @@ class DbAdapter
     {
         $query = 'MATCH (node) WHERE ID(node) = $id RETURN node';
         $bind = ['id' => $nodeId];
+        $this->db->logQuery($query, $bind);
 
         try {
             $qResult = $this->db->getConnection()->run($query, $bind);
         } catch (Neo4jExceptionInterface $exception) {
-            error_log($exception->getMessage());
+            $this->db->logException($exception);
             throw new \RuntimeException
             (
                 sprintf
@@ -228,11 +229,12 @@ class DbAdapter
     {
         $query = 'MATCH (node) WHERE ID(node) = $id RETURN node.uuid';
         $bind = ['id' => $nodeId];
+        $this->db->logQuery($query, $bind);
 
         try {
             $qResult = $this->db->getConnection()->run($query, $bind);
         } catch (Neo4jExceptionInterface $exception) {
-            error_log($exception->getMessage());
+            $this->db->logException($exception);
             throw new \RuntimeException
             (
                 sprintf
@@ -263,11 +265,12 @@ class DbAdapter
     {
         $query = 'MATCH (node { uuid: {uuid} }) RETURN node';
         $bind = ['uuid' => $nodeUuid];
+        $this->db->logQuery($query, $bind);
 
         try {
             $qResult = $this->db->getConnection()->run($query, $bind);
         } catch (Neo4jExceptionInterface $exception) {
-            error_log($exception->getMessage());
+            $this->db->logException($exception);
             throw new \RuntimeException
             (
                 sprintf
@@ -320,11 +323,12 @@ class DbAdapter
     {
         $query = 'MATCH (node { uuid: {uuid} }) DELETE node';
         $bind = ['uuid' => $nodeUuid];
+        $this->db->logQuery($query, $bind);
 
         try {
             $this->db->getConnection()->run($query, $bind);
         } catch (Neo4jExceptionInterface $exception) {
-            error_log($exception->getMessage());
+            $this->db->logException($exception);
             throw new \RuntimeException
             (
                 sprintf
@@ -348,11 +352,12 @@ class DbAdapter
 
         $query = 'MATCH (node) RETURN node LIMIT 20';
         $bind = [];
+        $this->db->logQuery($query, $bind);
 
         try {
             $qResult = $this->db->getConnection()->run($query, $bind);
         } catch (Neo4jExceptionInterface $exception) {
-            error_log($exception->getMessage());
+            $this->db->logException($exception);
             throw new \RuntimeException
             (
                 sprintf
@@ -387,11 +392,12 @@ class DbAdapter
     {
         $query = 'MATCH ()-[relationship { uuid: {uuid} }]->() RETURN relationship';
         $bind = ['uuid' => $relationshipUuid];
+        $this->db->logQuery($query, $bind);
 
         try {
             $qResult = $this->db->getConnection()->run($query, $bind);
         } catch (Neo4jExceptionInterface $exception) {
-            error_log($exception->getMessage());
+            $this->db->logException($exception);
             throw new \RuntimeException
             (
                 sprintf
@@ -422,11 +428,12 @@ class DbAdapter
     {
         $query = 'MATCH ()-[rel]->() WHERE ID(rel) = $id RETURN rel';
         $bind = ['id' => $relationshipId];
+        $this->db->logQuery($query, $bind);
 
         try {
             $qResult = $this->db->getConnection()->run($query, $bind);
         } catch (Neo4jExceptionInterface $exception) {
-            error_log($exception->getMessage());
+            $this->db->logException($exception);
             throw new \RuntimeException
             (
                 sprintf
@@ -481,19 +488,21 @@ class DbAdapter
 
 
     /**
+     * @param int $limit
      * @return Relationship[]
      */
-    public function listRelationships(): array
+    public function listRelationships(int $limit): array
     {
         $relationships = [];
 
-        $query = 'MATCH (n1)-[r]->(n2) RETURN r LIMIT 20';
+        $query = 'MATCH (n1)-[r]->(n2) RETURN r LIMIT ' . $limit;
         $bind = [];
+        $this->db->logQuery($query, $bind);
 
         try {
             $qResult = $this->db->getConnection()->run($query, $bind);
         } catch (Neo4jExceptionInterface $exception) {
-            error_log($exception->getMessage());
+            $this->db->logException($exception);
             throw new \RuntimeException
             (
                 sprintf
@@ -530,11 +539,12 @@ class DbAdapter
 
         $query = 'MATCH (n1 {uuid: {n1uuid}})-[r]-(n2) RETURN r LIMIT 20';
         $bind = ['n1uuid' => $nodeUuid];
+        $this->db->logQuery($query, $bind);
 
         try {
             $qResult = $this->db->getConnection()->run($query, $bind);
         } catch (Neo4jExceptionInterface $exception) {
-            error_log($exception->getMessage());
+            $this->db->logException($exception);
             throw new \RuntimeException
             (
                 sprintf
@@ -599,6 +609,7 @@ class DbAdapter
 
         $transaction = $this->db->beginTransaction();
         $transaction->push($query, $bind);
+        $this->db->logQuery($query, $bind);
 
         try {
             $resultCollection = $this->db->commit($transaction);
@@ -612,7 +623,7 @@ class DbAdapter
                 }
             }
         } catch (Neo4jExceptionInterface $exception) {
-            error_log($exception->getMessage());
+            $this->db->logException($exception);
             throw new \RuntimeException
             (
                 sprintf
@@ -706,11 +717,12 @@ class DbAdapter
         );
 
         $transaction->push($query, $bind);
+        $this->db->logQuery($query, $bind);
 
         try {
             $this->db->commit($transaction);
         } catch (Neo4jExceptionInterface $exception) {
-            error_log($exception->getMessage());
+            $this->db->logException($exception);
             throw new \RuntimeException
             (
                 sprintf

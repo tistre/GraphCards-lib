@@ -3,6 +3,8 @@
 namespace GraphCards\Db;
 
 
+use Psr\Log\LoggerInterface;
+
 class DbConfig
 {
     /**
@@ -14,6 +16,9 @@ class DbConfig
      * @var string Example: "bolt://neo4j:password@localhost:7687"
      */
     protected $boltConnection = '';
+
+    /** @var LoggerInterface */
+    protected $logger;
 
 
     /**
@@ -52,6 +57,26 @@ class DbConfig
     public function setBoltConnection(string $boltConnection): self
     {
         $this->boltConnection = $boltConnection;
+        return $this;
+    }
+
+
+    /**
+     * @return LoggerInterface
+     */
+    public function getLogger(): LoggerInterface
+    {
+        return $this->logger;
+    }
+
+
+    /**
+     * @param LoggerInterface $logger
+     * @return self
+     */
+    public function setLogger(LoggerInterface $logger): self
+    {
+        $this->logger = $logger;
         return $this;
     }
 }

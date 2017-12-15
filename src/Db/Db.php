@@ -121,4 +121,37 @@ class Db
         $this->connection = false;
         $this->getConnection();
     }
+
+
+    /**
+     * @param string $query
+     * @param array $bind
+     * @return void
+     */
+    public function logQuery(string $query, array $bind)
+    {
+        $logger = $this->dbConfig->getLogger();
+
+        if (!$logger) {
+            return;
+        }
+
+        $logger->info('Neo4j query: ' . $query, $bind);
+    }
+
+
+    /**
+     * @param \Exception $exception
+     * @return void
+     */
+    public function logException(\Exception $exception)
+    {
+        $logger = $this->dbConfig->getLogger();
+
+        if (!$logger) {
+            return;
+        }
+
+        $logger->error('Neo4j exception: ' . $exception->getMessage(), $exception->getTrace());
+    }
 }
