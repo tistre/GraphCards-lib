@@ -21,7 +21,7 @@ class Node
             return '';
         }
 
-        return $this->properties['uuid']->getValue();
+        return (string) $this->properties['uuid']->getValue();
     }
 
 

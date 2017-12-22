@@ -132,7 +132,7 @@ class XmlImporter
         Example:
 
         <property key="KEY">
-          <value>VALUE</value>
+          <value type="string">VALUE</value>
         </property>
         */
 
@@ -145,6 +145,10 @@ class XmlImporter
         // TODO: Add support for multi-valued properties
 
         foreach ($this->getChildrenByTagName($domNode,'value') as $domSubNode) {
+            if ($domSubNode->hasAttribute('type')) {
+                $property->setType($domSubNode->getAttribute('type'));
+            }
+
             $property->setValue($domSubNode->nodeValue);
         }
 
