@@ -344,13 +344,18 @@ class DbAdapter
 
 
     /**
+     * @param string $label
      * @return Node[]
      */
-    public function listNodes(): array
+    public function listNodes(string $label = ''): array
     {
         $nodes = [];
 
-        $query = 'MATCH (node) RETURN node LIMIT 20';
+        $query = sprintf(
+            'MATCH (node%s) RETURN node LIMIT 20',
+            DbUtils::labelsString([$label])
+        );
+
         $bind = [];
         $this->db->logQuery($query, $bind);
 

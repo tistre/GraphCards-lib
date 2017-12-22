@@ -10,6 +10,10 @@ class DbUtils
         $result = '';
 
         foreach ($labels as $label) {
+            if (strlen($label) === 0) {
+                continue;
+            }
+            
             $result .= sprintf(':`%s`', $label);
         }
 
