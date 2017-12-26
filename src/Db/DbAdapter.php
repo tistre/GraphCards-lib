@@ -304,14 +304,34 @@ class DbAdapter
         $node->setLabels($recordNode->labels());
 
         foreach ($recordNode->values() as $name => $value) {
-            $nodeProperty = (new Property())
-                ->setName($name)
-                ->setValue($value);
-
-            $node->setProperty($nodeProperty);
+            $node->setProperty($this->valueToProperty($name, $value));
         }
 
         return $node;
+    }
+
+
+    /**
+     * @param string $name
+     * @param int|float|bool|string $value
+     * @return Property
+     */
+    protected function valueToProperty(string $name, $value): Property
+    {
+        if (is_int($value)) {
+            $type = Property::TYPE_INTEGER;
+        } elseif (is_float($value)) {
+            $type = Property::TYPE_FLOAT;
+        } elseif (is_bool($value)) {
+            $type = Property::TYPE_BOOLEAN;
+        } else {
+            $type = Property::TYPE_STRING;
+        }
+
+        return (new Property())
+            ->setName($name)
+            ->setType($type)
+            ->setValue($value);
     }
 
 
@@ -481,11 +501,7 @@ class DbAdapter
         $relationship->setTargetNode($targetNode);
 
         foreach ($recordRelationship->values() as $name => $value) {
-            $relationshipProperty = (new Property())
-                ->setName($name)
-                ->setValue($value);
-
-            $relationship->setProperty($relationshipProperty);
+            $relationship->setProperty($this->valueToProperty($name, $value));
         }
 
         return $relationship;
