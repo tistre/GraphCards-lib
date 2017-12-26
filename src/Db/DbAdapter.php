@@ -758,4 +758,74 @@ class DbAdapter
 
         return $this->loadRelationship($newRelationship->getUuid());
     }
+
+
+    /**
+     * @return string[]
+     */
+    public function listNodeLabels(): array
+    {
+        $result = [];
+
+        $query = 'CALL db.labels()';
+        $bind = [];
+        $this->db->logQuery($query, $bind);
+
+        try {
+            $qResult = $this->db->getConnection()->run($query, $bind);
+        } catch (Neo4jExceptionInterface $exception) {
+            $this->db->logException($exception);
+            throw new \RuntimeException
+            (
+                sprintf
+                (
+                    '%s: Neo4j run failed.',
+                    __METHOD__
+                ),
+                0,
+                $exception
+            );
+        }
+
+        foreach ($qResult->records() as $record) {
+            $result[] = $record->get('label');
+        }
+
+        return $result;
+    }
+
+
+    /**
+     * @return string[]
+     */
+    public function listRelationshipTypes(): array
+    {
+        $result = [];
+
+        $query = 'CALL db.relationshipTypes()';
+        $bind = [];
+        $this->db->logQuery($query, $bind);
+
+        try {
+            $qResult = $this->db->getConnection()->run($query, $bind);
+        } catch (Neo4jExceptionInterface $exception) {
+            $this->db->logException($exception);
+            throw new \RuntimeException
+            (
+                sprintf
+                (
+                    '%s: Neo4j run failed.',
+                    __METHOD__
+                ),
+                0,
+                $exception
+            );
+        }
+
+        foreach ($qResult->records() as $record) {
+            $result[] = $record->get('relationshipType');
+        }
+
+        return $result;
+    }
 }
