@@ -15,6 +15,9 @@ class DbAdapter
     /** @var Db */
     protected $db;
 
+    /** @var \Collator */
+    protected $collator;
+
 
     public function __construct(Db $db)
     {
@@ -784,12 +787,16 @@ class DbAdapter
                 ),
                 0,
                 $exception
-            );
+            );        $this->sort($result);
+
+
         }
 
         foreach ($qResult->records() as $record) {
             $result[] = $record->get('label');
         }
+
+        $this->sort($result);
 
         return $result;
     }
@@ -826,6 +833,60 @@ class DbAdapter
             $result[] = $record->get('relationshipType');
         }
 
+        $this->sort($result);
+
         return $result;
+    }
+
+
+    /**
+     * @return string[]
+     */
+    public function listPropertyKeys(): array
+    {
+        $result = [];
+
+        $query = 'CALL db.propertyKeys()';
+        $bind = [];
+        $this->db->logQuery($query, $bind);
+
+        try {
+            $qResult = $this->db->getConnection()->run($query, $bind);
+        } catch (Neo4jExceptionInterface $exception) {
+            $this->db->logException($exception);
+            throw new \RuntimeException
+            (
+                sprintf
+                (
+                    '%s: Neo4j run failed.',
+                    __METHOD__
+                ),
+                0,
+                $exception
+            );
+        }
+
+        foreach ($qResult->records() as $record) {
+            $result[] = $record->get('propertyKey');
+        }
+
+        $this->sort($result);
+
+        return $result;
+    }
+
+
+    /**
+     * @param string[] $arr
+     * @return void
+     */
+    protected function sort(array &$arr)
+    {
+        if (!$this->collator) {
+            // TODO: Fix hardcoded locale
+            $this->collator = new \Collator('en');
+        }
+
+        usort($arr, [$this->collator, 'compare']);
     }
 }

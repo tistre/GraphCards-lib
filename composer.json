@@ -13,6 +13,7 @@
     "require": 
     {
         "php": ">=7.1.0",
+        "ext-intl": "*",
         "graphaware/neo4j-php-client": "^4.8",
         "monolog/monolog": "^1.23"
     },
