@@ -39,10 +39,10 @@ class DbUtils
                     $bind[$bindKey] = $v;
                 }
 
-                $propertyStrings[] = sprintf('%s: [ %s ]', $key, implode(', ', $parts));
+                $propertyStrings[] = sprintf('`%s`: [ %s ]', $key, implode(', ', $parts));
             } else {
                 $bindKey = 'bind_' . count($bind);
-                $propertyStrings[] = sprintf('%s: {%s}', $key, $bindKey);
+                $propertyStrings[] = sprintf('`%s`: {%s}', $key, $bindKey);
                 $bind[$bindKey] = $value;
             }
         }
