@@ -34,14 +34,14 @@ class DbUtils
                 $parts = [];
 
                 foreach ($value as $i => $v) {
-                    $bindKey = $key . $i . count($bind);
+                    $bindKey = 'bind_' . $i . '_' . count($bind);
                     $parts[] = sprintf('{%s}', $bindKey);
                     $bind[$bindKey] = $v;
                 }
 
                 $propertyStrings[] = sprintf('%s: [ %s ]', $key, implode(', ', $parts));
             } else {
-                $bindKey = $key . count($bind);
+                $bindKey = 'bind_' . count($bind);
                 $propertyStrings[] = sprintf('%s: {%s}', $key, $bindKey);
                 $bind[$bindKey] = $value;
             }
@@ -58,7 +58,7 @@ class DbUtils
 
         foreach ($properties as $key => $value) {
             if ((is_array($value) && (count($value) === 0)) || ((!is_array($value)) && (strlen($value) === 0))) {
-                $removePropertyStrings[] = sprintf('%s.%s', $node, $key);
+                $removePropertyStrings[] = sprintf('%s.`%s`', $node, $key);
                 continue;
             }
 
@@ -66,15 +66,16 @@ class DbUtils
                 $parts = [];
 
                 foreach ($value as $i => $v) {
-                    $k = $key . $i;
-                    $parts[] = sprintf('{%s}', $k);
-                    $bind[$k] = $v;
+                    $bindKey = 'bind_' . $i . '_' . count($bind);
+                    $parts[] = sprintf('{%s}', $bindKey);
+                    $bind[$bindKey] = $v;
                 }
 
-                $setPropertyStrings[] = sprintf('%s.%s = [ %s ]', $node, $key, implode(', ', $parts));
+                $setPropertyStrings[] = sprintf('%s.`%s` = [ %s ]', $node, $key, implode(', ', $parts));
             } else {
-                $setPropertyStrings[] = sprintf('%s.%s = {%s}', $node, $key, $key);
-                $bind[$key] = $value;
+                $bindKey = 'bind_' . count($bind);
+                $setPropertyStrings[] = sprintf('%s.`%s` = {%s}', $node, $key, $bindKey);
+                $bind[$bindKey] = $value;
             }
         }
 
