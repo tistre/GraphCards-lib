@@ -17,11 +17,11 @@ class Node
      */
     public function getUuid(): string
     {
-        if (! isset($this->properties['uuid'])) {
+        if (!$this->hasProperty('uuid')) {
             return '';
         }
 
-        return (string) $this->properties['uuid']->getValue();
+        return (string)$this->getProperty('uuid')->getValue();
     }
 
 
@@ -56,6 +56,30 @@ class Node
     {
         $this->labels = array_filter($labels);
         return $this;
+    }
+
+
+    /**
+     * @param string $name
+     * @return bool
+     */
+    public function hasProperty(string $name): bool
+    {
+        return isset($this->properties[$name]);
+    }
+
+
+    /**
+     * @param string $name
+     * @return Property
+     */
+    public function getProperty(string $name): Property
+    {
+        if (!$this->hasProperty($name)) {
+            throw new \RuntimeException(sprintf('%s: Property "%s" not set.', __METHOD__, $name));
+        }
+
+        return $this->properties[$name];
     }
 
 
