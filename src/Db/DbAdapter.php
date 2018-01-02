@@ -12,6 +12,8 @@ use GraphAware\Neo4j\Client\Result\ResultCollection;
 
 class DbAdapter
 {
+    const LIMIT_DEFAULT = 20;
+
     /** @var Db */
     protected $db;
 
@@ -368,15 +370,19 @@ class DbAdapter
 
     /**
      * @param string $label
+     * @param int $skip
+     * @param int Slimit
      * @return Node[]
      */
-    public function listNodes(string $label = ''): array
+    public function listNodes(string $label = '', int $skip = 0, int $limit = self::LIMIT_DEFAULT): array
     {
         $nodes = [];
 
         $query = sprintf(
-            'MATCH (node%s) RETURN node LIMIT 20',
-            DbUtils::labelsString([$label])
+            'MATCH (node%s) RETURN node ORDER BY node.uuid SKIP %d LIMIT %d',
+            DbUtils::labelsString([$label]),
+            $skip,
+            $limit
         );
 
         $bind = [];
