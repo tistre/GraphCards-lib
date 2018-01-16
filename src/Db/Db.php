@@ -2,6 +2,7 @@
 
 namespace GraphCards\Db;
 
+use GraphAware\Common\Result\Result;
 use GraphAware\Common\Transaction\TransactionInterface;
 use GraphAware\Neo4j\Client\ClientBuilder;
 use GraphAware\Neo4j\Client\ClientInterface;
@@ -124,11 +125,21 @@ class Db
 
 
     /**
-     * @param string $query
-     * @param array $bind
+     * @param DbQuery $dbQuery
+     * @return Result
+     * @throws \GraphAware\Neo4j\Client\Exception\Neo4jExceptionInterface
+     */
+    public function runQuery(DbQuery $dbQuery): Result
+    {
+        return $this->getConnection()->run($dbQuery->query, $dbQuery->bind);
+    }
+
+
+    /**
+     * @param DbQuery $dbQuery
      * @return void
      */
-    public function logQuery(string $query, array $bind)
+    public function logQuery(DbQuery $dbQuery)
     {
         $logger = $this->dbConfig->getLogger();
 
@@ -136,7 +147,7 @@ class Db
             return;
         }
 
-        $logger->info('Neo4j query: ' . $query, $bind);
+        $logger->info('Neo4j query: ' . $dbQuery->query, $dbQuery->bind);
     }
 
 

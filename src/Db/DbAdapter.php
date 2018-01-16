@@ -39,10 +39,10 @@ class DbAdapter
             $propertyData[$property->getName()] = $property->getValue();
         }
 
-        $bind = [];
-        $propertyQuery = DbUtils::propertiesString($propertyData, $bind);
+        $dbQuery = new DbQuery();
+        $propertyQuery = DbUtils::propertiesString($propertyData, $dbQuery->bind);
 
-        $query = sprintf
+        $dbQuery->query = sprintf
         (
             'CREATE (n%s { %s }) RETURN ID(n)',
             DbUtils::labelsString($node->getLabels()),
@@ -50,8 +50,8 @@ class DbAdapter
         );
 
         $transaction = $this->db->beginTransaction();
-        $transaction->push($query, $bind);
-        $this->db->logQuery($query, $bind);
+        $transaction->push($dbQuery->query, $dbQuery->bind);
+        $this->db->logQuery($dbQuery);
 
         try {
             $resultCollection = $this->db->commit($transaction);
@@ -142,17 +142,19 @@ class DbAdapter
 
         $transaction = $this->db->beginTransaction();
 
-        $bind = ['uuid' => $newNode->getUuid()];
-        $propertyQuery = DbUtils::propertiesUpdateString('node', $updatedProperties, $bind);
+        $dbQuery = new DbQuery();
 
-        $query = sprintf
+        $dbQuery->bind = ['uuid' => $newNode->getUuid()];
+        $propertyQuery = DbUtils::propertiesUpdateString('node', $updatedProperties, $dbQuery->bind);
+
+        $dbQuery->query = sprintf
         (
             'MATCH (node { uuid: {uuid} })%s',
             $propertyQuery
         );
 
         if (count($removedLabels) > 0) {
-            $query .= sprintf
+            $dbQuery->query .= sprintf
             (
                 ' REMOVE node%s',
                 DbUtils::labelsString($removedLabels)
@@ -160,15 +162,15 @@ class DbAdapter
         }
 
         if (count($addedLabels) > 0) {
-            $query .= sprintf
+            $dbQuery->query .= sprintf
             (
                 ' SET node%s',
                 DbUtils::labelsString($addedLabels)
             );
         }
 
-        $transaction->push($query, $bind);
-        $this->db->logQuery($query, $bind);
+        $transaction->push($dbQuery->query, $dbQuery->bind);
+        $this->db->logQuery($dbQuery);
 
         try {
             $this->db->commit($transaction);
@@ -196,12 +198,14 @@ class DbAdapter
      */
     protected function loadNodeById($nodeId): Node
     {
-        $query = 'MATCH (node) WHERE ID(node) = $id RETURN node';
-        $bind = ['id' => $nodeId];
-        $this->db->logQuery($query, $bind);
+        $dbQuery = (new DbQuery())
+            ->setQuery('MATCH (node) WHERE ID(node) = $id RETURN node')
+            ->setBind(['id' => $nodeId]);
+
+        $this->db->logQuery($dbQuery);
 
         try {
-            $qResult = $this->db->getConnection()->run($query, $bind);
+            $qResult = $this->db->runQuery($dbQuery);
         } catch (Neo4jExceptionInterface $exception) {
             $this->db->logException($exception);
             throw new \RuntimeException
@@ -232,12 +236,14 @@ class DbAdapter
      */
     public function getNodeUuidById($nodeId): string
     {
-        $query = 'MATCH (node) WHERE ID(node) = $id RETURN node.uuid';
-        $bind = ['id' => $nodeId];
-        $this->db->logQuery($query, $bind);
+        $dbQuery = (new DbQuery())
+            ->setQuery('MATCH (node) WHERE ID(node) = $id RETURN node.uuid')
+            ->setBind(['id' => $nodeId]);
+
+        $this->db->logQuery($dbQuery);
 
         try {
-            $qResult = $this->db->getConnection()->run($query, $bind);
+            $qResult = $this->db->runQuery($dbQuery);
         } catch (Neo4jExceptionInterface $exception) {
             $this->db->logException($exception);
             throw new \RuntimeException
@@ -268,12 +274,14 @@ class DbAdapter
      */
     public function loadNode($nodeUuid): Node
     {
-        $query = 'MATCH (node { uuid: {uuid} }) RETURN node';
-        $bind = ['uuid' => $nodeUuid];
-        $this->db->logQuery($query, $bind);
+        $dbQuery = (new DbQuery())
+            ->setQuery('MATCH (node { uuid: {uuid} }) RETURN node')
+            ->setBind(['uuid' => $nodeUuid]);
+
+        $this->db->logQuery($dbQuery);
 
         try {
-            $qResult = $this->db->getConnection()->run($query, $bind);
+            $qResult = $this->db->runQuery($dbQuery);
         } catch (Neo4jExceptionInterface $exception) {
             $this->db->logException($exception);
             throw new \RuntimeException
@@ -346,12 +354,14 @@ class DbAdapter
      */
     public function deleteNode($nodeUuid)
     {
-        $query = 'MATCH (node { uuid: {uuid} }) DELETE node';
-        $bind = ['uuid' => $nodeUuid];
-        $this->db->logQuery($query, $bind);
+        $dbQuery = (new DbQuery())
+            ->setQuery('MATCH (node { uuid: {uuid} }) DELETE node')
+            ->setBind(['uuid' => $nodeUuid]);
+
+        $this->db->logQuery($dbQuery);
 
         try {
-            $this->db->getConnection()->run($query, $bind);
+            $this->db->runQuery($dbQuery);
         } catch (Neo4jExceptionInterface $exception) {
             $this->db->logException($exception);
             throw new \RuntimeException
@@ -369,27 +379,16 @@ class DbAdapter
 
 
     /**
-     * @param string $label
-     * @param int $skip
-     * @param int Slimit
+     * @param DbQuery $dbQuery
      * @return Node[]
      */
-    public function listNodes(string $label = '', int $skip = 0, int $limit = self::LIMIT_DEFAULT): array
+    public function listNodes(DbQuery $dbQuery): array
     {
         $nodes = [];
-
-        $query = sprintf(
-            'MATCH (node%s) RETURN node ORDER BY node.uuid SKIP %d LIMIT %d',
-            DbUtils::labelsString([$label]),
-            $skip,
-            $limit
-        );
-
-        $bind = [];
-        $this->db->logQuery($query, $bind);
+        $this->db->logQuery($dbQuery);
 
         try {
-            $qResult = $this->db->getConnection()->run($query, $bind);
+            $qResult = $this->db->runQuery($dbQuery);
         } catch (Neo4jExceptionInterface $exception) {
             $this->db->logException($exception);
             throw new \RuntimeException
@@ -419,17 +418,36 @@ class DbAdapter
 
 
     /**
+     * @param string $label
+     * @param int $skip
+     * @param int Slimit
+     * @return DbQuery
+     */
+    public function buildNodeQuery(string $label = '', int $skip = 0, int $limit = self::LIMIT_DEFAULT): DbQuery
+    {
+        return (new DbQuery())->setQuery(sprintf(
+            'MATCH (node%s) RETURN node ORDER BY node.uuid SKIP %d LIMIT %d',
+            DbUtils::labelsString([$label]),
+            $skip,
+            $limit
+        ));
+    }
+
+
+    /**
      * @param string $relationshipUuid
      * @return Relationship
      */
     public function loadRelationship($relationshipUuid): Relationship
     {
-        $query = 'MATCH ()-[relationship { uuid: {uuid} }]->() RETURN relationship';
-        $bind = ['uuid' => $relationshipUuid];
-        $this->db->logQuery($query, $bind);
+        $dbQuery = (new DbQuery())
+            ->setQuery('MATCH ()-[relationship { uuid: {uuid} }]->() RETURN relationship')
+            ->setBind(['uuid' => $relationshipUuid]);
+
+        $this->db->logQuery($dbQuery);
 
         try {
-            $qResult = $this->db->getConnection()->run($query, $bind);
+            $qResult = $this->db->runQuery($dbQuery);
         } catch (Neo4jExceptionInterface $exception) {
             $this->db->logException($exception);
             throw new \RuntimeException
@@ -460,12 +478,14 @@ class DbAdapter
      */
     protected function loadRelationshipById($relationshipId): Relationship
     {
-        $query = 'MATCH ()-[rel]->() WHERE ID(rel) = $id RETURN rel';
-        $bind = ['id' => $relationshipId];
-        $this->db->logQuery($query, $bind);
+        $dbQuery = (new DbQuery())
+            ->setQuery('MATCH ()-[rel]->() WHERE ID(rel) = $id RETURN rel')
+            ->setBind(['id' => $relationshipId]);
+
+        $this->db->logQuery($dbQuery);
 
         try {
-            $qResult = $this->db->getConnection()->run($query, $bind);
+            $qResult = $this->db->runQuery($dbQuery);
         } catch (Neo4jExceptionInterface $exception) {
             $this->db->logException($exception);
             throw new \RuntimeException
@@ -518,19 +538,17 @@ class DbAdapter
 
 
     /**
-     * @param int $limit
+     * @param DbQuery $dbQuery
      * @return Relationship[]
      */
-    public function listRelationships(int $limit): array
+    public function listRelationships(DbQuery $dbQuery): array
     {
         $relationships = [];
 
-        $query = 'MATCH (n1)-[r]->(n2) RETURN r LIMIT ' . $limit;
-        $bind = [];
-        $this->db->logQuery($query, $bind);
+        $this->db->logQuery($dbQuery);
 
         try {
-            $qResult = $this->db->getConnection()->run($query, $bind);
+            $qResult = $this->db->runQuery($dbQuery);
         } catch (Neo4jExceptionInterface $exception) {
             $this->db->logException($exception);
             throw new \RuntimeException
@@ -560,6 +578,17 @@ class DbAdapter
 
 
     /**
+     * @param int $limit
+     * @return DbQuery
+     */
+    public function buildRelationshipQuery(int $limit): DbQuery
+    {
+        return (new DbQuery())
+            ->setQuery('MATCH (n1)-[r]->(n2) RETURN r LIMIT ' . $limit);
+    }
+
+
+    /**
      * @param string $nodeUuid
      * @return Relationship[]
      */
@@ -567,12 +596,14 @@ class DbAdapter
     {
         $relationships = [];
 
-        $query = 'MATCH (n1 {uuid: {n1uuid}})-[r]-(n2) RETURN r LIMIT 20';
-        $bind = ['n1uuid' => $nodeUuid];
-        $this->db->logQuery($query, $bind);
+        $dbQuery = (new DbQuery())
+            ->setQuery('MATCH (n1 {uuid: {n1uuid}})-[r]-(n2) RETURN r LIMIT 20')
+            ->setBind(['n1uuid' => $nodeUuid]);
+
+        $this->db->logQuery($dbQuery);
 
         try {
-            $qResult = $this->db->getConnection()->run($query, $bind);
+            $qResult = $this->db->runQuery($dbQuery);
         } catch (Neo4jExceptionInterface $exception) {
             $this->db->logException($exception);
             throw new \RuntimeException
@@ -624,22 +655,22 @@ class DbAdapter
      */
     public function createRelationship(Relationship $relationship): Relationship
     {
-        $bind = [];
+        $dbQuery = new DbQuery();
 
-        $query = sprintf
+        $dbQuery->query = sprintf
         (
             'MATCH (s%s {%s}), (t%s {%s}) MERGE (s)-[r%s {%s}]->(t) RETURN ID(r)',
             DbUtils::labelsString($relationship->getSourceNode()->getLabels()),
-            $this->propertiesString($relationship->getSourceNode()->getProperties(), $bind),
+            $this->propertiesString($relationship->getSourceNode()->getProperties(), $dbQuery->bind),
             DbUtils::labelsString($relationship->getTargetNode()->getLabels()),
-            $this->propertiesString($relationship->getTargetNode()->getProperties(), $bind),
+            $this->propertiesString($relationship->getTargetNode()->getProperties(), $dbQuery->bind),
             DbUtils::labelsString([$relationship->getType()]),
-            $this->propertiesString($relationship->getProperties(), $bind)
+            $this->propertiesString($relationship->getProperties(), $dbQuery->bind)
         );
 
         $transaction = $this->db->beginTransaction();
-        $transaction->push($query, $bind);
-        $this->db->logQuery($query, $bind);
+        $transaction->push($dbQuery->query, $dbQuery->bind);
+        $this->db->logQuery($dbQuery);
 
         try {
             $resultCollection = $this->db->commit($transaction);
@@ -737,17 +768,18 @@ class DbAdapter
 
         $transaction = $this->db->beginTransaction();
 
-        $bind = ['uuid' => $newRelationship->getUuid()];
-        $propertyQuery = DbUtils::propertiesUpdateString('relationship', $updatedProperties, $bind);
+        $dbQuery = (new DbQuery())
+            ->setBind(['uuid' => $newRelationship->getUuid()]);
 
-        $query = sprintf
-        (
+        $propertyQuery = DbUtils::propertiesUpdateString('relationship', $updatedProperties, $dbQuery->bind);
+
+        $dbQuery->query = sprintf(
             'MATCH ()-[relationship { uuid: {uuid} }]->()%s',
             $propertyQuery
         );
 
-        $transaction->push($query, $bind);
-        $this->db->logQuery($query, $bind);
+        $transaction->push($dbQuery->query, $dbQuery->bind);
+        $this->db->logQuery($dbQuery);
 
         try {
             $this->db->commit($transaction);
@@ -776,26 +808,24 @@ class DbAdapter
     {
         $result = [];
 
-        $query = 'CALL db.labels()';
-        $bind = [];
-        $this->db->logQuery($query, $bind);
+        $dbQuery = (new DbQuery())->setQuery('CALL db.labels()');
+        $this->db->logQuery($dbQuery);
 
         try {
-            $qResult = $this->db->getConnection()->run($query, $bind);
+            $qResult = $this->db->runQuery($dbQuery);
         } catch (Neo4jExceptionInterface $exception) {
             $this->db->logException($exception);
             throw new \RuntimeException
             (
-                sprintf
-                (
+                sprintf(
                     '%s: Neo4j run failed.',
                     __METHOD__
                 ),
                 0,
                 $exception
-            );        $this->sort($result);
+            );
 
-
+            $this->sort($result);
         }
 
         foreach ($qResult->records() as $record) {
@@ -815,12 +845,11 @@ class DbAdapter
     {
         $result = [];
 
-        $query = 'CALL db.relationshipTypes()';
-        $bind = [];
-        $this->db->logQuery($query, $bind);
+        $dbQuery = (new DbQuery())->setQuery('CALL db.relationshipTypes()');
+        $this->db->logQuery($dbQuery);
 
         try {
-            $qResult = $this->db->getConnection()->run($query, $bind);
+            $qResult = $this->db->runQuery($dbQuery);
         } catch (Neo4jExceptionInterface $exception) {
             $this->db->logException($exception);
             throw new \RuntimeException
@@ -852,12 +881,11 @@ class DbAdapter
     {
         $result = [];
 
-        $query = 'CALL db.propertyKeys()';
-        $bind = [];
-        $this->db->logQuery($query, $bind);
+        $dbQuery = (new DbQuery())->setQuery('CALL db.propertyKeys()');
+        $this->db->logQuery($dbQuery);
 
         try {
-            $qResult = $this->db->getConnection()->run($query, $bind);
+            $qResult = $this->db->runQuery($dbQuery);
         } catch (Neo4jExceptionInterface $exception) {
             $this->db->logException($exception);
             throw new \RuntimeException
@@ -879,6 +907,61 @@ class DbAdapter
         $this->sort($result);
 
         return $result;
+    }
+
+
+    /**
+     * @param DbQuery $dbQuery
+     * @return array
+     */
+    public function listResults(DbQuery $dbQuery): array
+    {
+        $rows = [];
+        $this->db->logQuery($dbQuery);
+
+        try {
+            $qResult = $this->db->runQuery($dbQuery);
+        } catch (Neo4jExceptionInterface $exception) {
+            $this->db->logException($exception);
+            throw new \RuntimeException(
+                sprintf(
+                    '%s: Neo4j run failed.',
+                    __METHOD__
+                ),
+                0,
+                $exception
+            );
+        }
+
+        foreach ($qResult->records() as $record) {
+            $row = [];
+
+            foreach ($record->keys() as $key) {
+                $value = $record->get($key);
+
+                if (is_object($value)) {
+                    if ($value instanceof \GraphAware\Neo4j\Client\Formatter\Type\Node) {
+                        $row[$key] = $this->loadNodeFromRecord($value);
+                    } elseif ($value instanceof \GraphAware\Neo4j\Client\Formatter\Type\Relationship) {
+                        $row[$key] = $this->loadRelationshipFromRecord($value);
+                    } else {
+                        throw new \RuntimeException(
+                            sprintf(
+                                '%s: Unsupported record type <%s>.',
+                                __METHOD__,
+                                get_class($value)
+                            )
+                        );
+                    }
+                } else {
+                    $row[$key] = $value;
+                }
+            }
+
+            $rows[] = $row;
+        }
+
+        return $rows;
     }
 
 
