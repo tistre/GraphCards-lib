@@ -4,6 +4,7 @@ namespace GraphCards\Utils;
 
 use GraphCards\Model\Node;
 use GraphCards\Model\Property;
+use GraphCards\Model\PropertyValue;
 use GraphCards\Model\Relationship;
 
 
@@ -47,7 +48,7 @@ class XmlImporter
         foreach ($this->getChildrenByTagName($domNode,'property') as $domSubNode) {
             $property = $this->importProperty($domSubNode);
 
-            if ((strlen($property->getName()) === 0) || (strlen($property->getValue() === 0))) {
+            if ((strlen($property->getName()) === 0) || (count($property->getValues()) === 0)) {
                 continue;
             }
 
@@ -142,14 +143,15 @@ class XmlImporter
             $property->setName($domNode->getAttribute('key'));
         }
 
-        // TODO: Add support for multi-valued properties
-
         foreach ($this->getChildrenByTagName($domNode,'value') as $domSubNode) {
+            $propertyValue = new PropertyValue();
+
             if ($domSubNode->hasAttribute('type')) {
-                $property->setType($domSubNode->getAttribute('type'));
+                $propertyValue->setType($domSubNode->getAttribute('type'));
             }
 
-            $property->setValue($domSubNode->nodeValue);
+            $propertyValue->setValue($domSubNode->nodeValue);
+            $property->addValue($propertyValue);
         }
 
         return $property;

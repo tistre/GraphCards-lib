@@ -111,11 +111,13 @@ class XmlExporter
         $this->writer->startElement('property');
         $this->writer->writeAttribute('key', $property->getName());
 
-        // <value></value>
-        $this->writer->startElement('value');
-        $this->writer->writeAttribute('type', $property->getType());
-        $this->writer->text($property->getValue());
-        $this->writer->endElement();
+        foreach ($property->getValues() as $propertyValue) {
+            // <value></value>
+            $this->writer->startElement('value');
+            $this->writer->writeAttribute('type', $propertyValue->getType());
+            $this->writer->text($propertyValue->getValue());
+            $this->writer->endElement();
+        }
 
         // </property>
         $this->writer->endElement();

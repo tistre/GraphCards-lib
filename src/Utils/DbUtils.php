@@ -5,7 +5,11 @@ namespace GraphCards\Utils;
 
 class DbUtils
 {
-    public static function labelsString(array $labels)
+    /**
+     * @param string[] $labels
+     * @return string
+     */
+    public static function labelsString(array $labels): string
     {
         $result = '';
 
@@ -21,11 +25,20 @@ class DbUtils
     }
 
 
-    public static function propertiesString(array $properties, &$bind)
+    /**
+     * @param array $properties
+     * @param array $bind
+     * @return string
+     */
+    public static function propertiesString(array $properties, array &$bind): string
     {
         $propertyStrings = [];
 
         foreach ($properties as $key => $value) {
+            if (is_array($value) && (count($value) === 1)) {
+                $value = array_shift($value);
+            }
+
             if (empty($value)) {
                 continue;
             }
@@ -51,12 +64,22 @@ class DbUtils
     }
 
 
-    public static function propertiesUpdateString($node, array $properties, &$bind)
+    /**
+     * @param string $node
+     * @param array $properties
+     * @param array $bind
+     * @return string
+     */
+    public static function propertiesUpdateString(string $node, array $properties, array &$bind): string
     {
         $setPropertyStrings = [];
         $removePropertyStrings = [];
 
         foreach ($properties as $key => $value) {
+            if (is_array($value) && (count($value) === 1)) {
+                $value = array_shift($value);
+            }
+
             if ((is_array($value) && (count($value) === 0)) || ((!is_array($value)) && (strlen($value) === 0))) {
                 $removePropertyStrings[] = sprintf('%s.`%s`', $node, $key);
                 continue;

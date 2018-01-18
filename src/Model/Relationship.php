@@ -27,7 +27,7 @@ class Relationship
             return '';
         }
 
-        return $this->properties['uuid']->getValue();
+        return $this->properties['uuid']->getFirstValue()->getValue();
     }
 
 

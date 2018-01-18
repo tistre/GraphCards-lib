@@ -4,6 +4,7 @@ namespace GraphCards\Db;
 
 use GraphCards\Model\Node;
 use GraphCards\Model\Property;
+use GraphCards\Model\PropertyValue;
 use GraphCards\Model\Relationship;
 use GraphCards\Utils\DbUtils;
 use GraphAware\Neo4j\Client\Exception\Neo4jExceptionInterface;
@@ -36,7 +37,13 @@ class DbAdapter
         $propertyData = [];
 
         foreach ($node->getProperties() as $property) {
-            $propertyData[$property->getName()] = $property->getValue();
+            $values = [];
+
+            foreach ($property->getValues() as $propertyValue) {
+                $values[] = $propertyValue->getValue();
+            }
+
+            $propertyData[$property->getName()] = $values;
         }
 
         $dbQuery = new DbQuery();
@@ -97,7 +104,11 @@ class DbAdapter
                 continue;
             }
 
-            $oldProperties[$property->getName()] = $property->getValue();
+            $oldProperties[$property->getName()] = [];
+
+            foreach ($property->getValues() as $propertyValue) {
+                $oldProperties[$property->getName()][] = $propertyValue->getValue();
+            }
         }
 
         $newProperties = [];
@@ -107,11 +118,15 @@ class DbAdapter
                 continue;
             }
 
-            if (strlen(trim($property->getValue())) === 0) {
+            if (count($property->getValues()) === 0) {
                 continue;
             }
 
-            $newProperties[$property->getName()] = $property->getValue();
+            $newProperties[$property->getName()] = [];
+
+            foreach ($property->getValues() as $propertyValue) {
+                $newProperties[$property->getName()][] = $propertyValue->getValue();
+            }
         }
 
         $updatedProperties = [];
@@ -326,25 +341,37 @@ class DbAdapter
 
     /**
      * @param string $name
-     * @param int|float|bool|string $value
+     * @param int|float|bool|string|array $values
      * @return Property
      */
-    protected function valueToProperty(string $name, $value): Property
+    protected function valueToProperty(string $name, $values): Property
     {
-        if (is_int($value)) {
-            $type = Property::TYPE_INTEGER;
-        } elseif (is_float($value)) {
-            $type = Property::TYPE_FLOAT;
-        } elseif (is_bool($value)) {
-            $type = Property::TYPE_BOOLEAN;
-        } else {
-            $type = Property::TYPE_STRING;
+        $property = (new Property())
+            ->setName($name);
+
+        if (!is_array($values)) {
+            $values = [$values];
         }
 
-        return (new Property())
-            ->setName($name)
-            ->setType($type)
-            ->setValue($value);
+        foreach ($values as $value) {
+            if (is_int($value)) {
+                $type = PropertyValue::TYPE_INTEGER;
+            } elseif (is_float($value)) {
+                $type = PropertyValue::TYPE_FLOAT;
+            } elseif (is_bool($value)) {
+                $type = PropertyValue::TYPE_BOOLEAN;
+            } else {
+                $type = PropertyValue::TYPE_STRING;
+            }
+
+            $propertyValue = (new PropertyValue())
+                ->setType($type)
+                ->setValue($value);
+
+            $property->addValue($propertyValue);
+        }
+
+        return $property;
     }
 
 
@@ -642,7 +669,13 @@ class DbAdapter
         $propertyData = [];
 
         foreach ($properties as $property) {
-            $propertyData[$property->getName()] = $property->getValue();
+            $values = [];
+
+            foreach ($property->getValues() as $propertyValue) {
+                $values[] = $propertyValue->getValue();
+            }
+
+            $propertyData[$property->getName()] = $values;
         }
 
         return DbUtils::propertiesString($propertyData, $bind);
@@ -716,7 +749,11 @@ class DbAdapter
                 continue;
             }
 
-            $oldProperties[$property->getName()] = $property->getValue();
+            $oldProperties[$property->getName()] = [];
+
+            foreach ($property->getValues() as $propertyValue) {
+                $oldProperties[$property->getName()][] = $propertyValue->getValue();
+            }
         }
 
         $newProperties = [];
@@ -726,11 +763,15 @@ class DbAdapter
                 continue;
             }
 
-            if (strlen(trim($property->getValue())) === 0) {
+            if (count($property->getValues()) === 0) {
                 continue;
             }
 
-            $newProperties[$property->getName()] = $property->getValue();
+            $newProperties[$property->getName()] = [];
+
+            foreach ($property->getValues() as $propertyValue) {
+                $newProperties[$property->getName()][] = $propertyValue->getValue();
+            }
         }
 
         $updatedProperties = [];

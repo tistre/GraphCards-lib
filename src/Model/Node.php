@@ -21,7 +21,7 @@ class Node
             return '';
         }
 
-        return (string)$this->getProperty('uuid')->getValue();
+        return (string)$this->getProperty('uuid')->getFirstValue()->getValue();
     }
 
 
@@ -33,7 +33,7 @@ class Node
     {
         $property = (new Property())
             ->setName('uuid')
-            ->setValue($uuid);
+            ->addValue((new PropertyValue())->setValue($uuid));
 
         return $this->setProperty($property);
     }

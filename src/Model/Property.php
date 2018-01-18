@@ -5,26 +5,11 @@ namespace GraphCards\Model;
 
 class Property
 {
-    const TYPE_INTEGER = 'integer';
-    const TYPE_FLOAT = 'float';
-    const TYPE_STRING = 'string';
-    const TYPE_BOOLEAN = 'boolean';
-
-    protected $types = [
-        self::TYPE_INTEGER,
-        self::TYPE_FLOAT,
-        self::TYPE_STRING,
-        self::TYPE_BOOLEAN
-    ];
-
     /** @var string */
     protected $name;
 
-    /** @var int|float|bool|string */
-    protected $value;
-
-    /** @var string */
-    protected $type = self::TYPE_STRING;
+    /** @var PropertyValue[] */
+    protected $values = [];
 
 
     /**
@@ -48,72 +33,53 @@ class Property
 
 
     /**
-     * @return int|float|bool|string
+     * @return PropertyValue[]
      */
-    public function getValue()
+    public function getValues(): array
     {
-        return $this->value;
+        return $this->values;
     }
 
 
     /**
-     * @param int|float|bool|string $value
+     * @param PropertyValue[] $propertyValues
      * @return self
      */
-    public function setValue($value): self
+    public function setValues(array $propertyValues): self
     {
-        $this->value = $this->convertValueToType($value);
+        $this->values = [];
+
+        foreach ($propertyValues as $propertyValue) {
+            $this->addValue($propertyValue);
+        }
+
         return $this;
     }
 
 
     /**
-     * @return string
+     * @return PropertyValue
      */
-    public function getType(): string
+    public function getFirstValue(): PropertyValue
     {
-        return $this->type;
+        if (count($this->values) === 0) {
+            return new PropertyValue();
+        }
+
+        return $this->values[0];
     }
 
 
     /**
-     * @param string $type
-     * @return Property
+     * @param PropertyValue $propertyValue
+     * @return self
      */
-    public function setType(string $type): self
+    public function addValue(PropertyValue $propertyValue): self
     {
-        $type = strtolower($type);
-
-        if (! in_array($type, $this->types)) {
-            throw new \RuntimeException(sprintf('%s: Unknown type "%s".', __METHOD__, $type));
+        if (strlen(trim($propertyValue->getValue())) > 0) {
+            $this->values[] = $propertyValue;
         }
 
-        $this->type = $type;
-        $this->value = $this->convertValueToType($this->value);
         return $this;
-    }
-
-
-    /**
-     * @param int|float|bool|string $value
-     * @return int|float|bool|string
-     */
-    protected function convertValueToType($value)
-    {
-        $result = $value;
-
-        // TODO: Would it be better to throw an exception on lossy conversions?
-
-        if ($this->type === self::TYPE_INTEGER) {
-            $result = intval($value);
-        } elseif ($this->type === self::TYPE_FLOAT) {
-            $result = floatval($value);
-        } elseif ($this->type === self::TYPE_BOOLEAN) {
-            $result = boolval($value);
-        } else {
-            $result = (string) $value;
-        }
-
-        return $result;
     }
 }
