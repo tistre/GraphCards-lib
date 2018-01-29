@@ -617,9 +617,10 @@ class DbAdapter
 
     /**
      * @param string $nodeUuid
+     * @param bool $loadNodes
      * @return Relationship[]
      */
-    public function listNodeRelationships(string $nodeUuid): array
+    public function listNodeRelationships(string $nodeUuid, bool $loadNodes = false): array
     {
         $relationships = [];
 
@@ -650,6 +651,11 @@ class DbAdapter
 
             if (strlen($relationship->getUuid()) === 0) {
                 continue;
+            }
+
+            if ($loadNodes) {
+                $relationship->setSourceNode($this->loadNode($relationship->getSourceNode()->getUuid()));
+                $relationship->setTargetNode($this->loadNode($relationship->getTargetNode()->getUuid()));
             }
 
             $relationships[] = $relationship;
