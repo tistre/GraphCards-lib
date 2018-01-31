@@ -49,12 +49,17 @@ class XmlExporter
 
     /**
      * @param Node $node
+     * @param array $addAttributes
      * @return void
      */
-    public function exportNode(Node $node)
+    public function exportNode(Node $node, $addAttributes = [])
     {
         // <node>
         $this->writer->startElement('node');
+
+        foreach ($addAttributes as $name => $value) {
+            $this->writer->writeAttribute($name, $value);
+        }
 
         foreach ($node->getLabels() as $label) {
             // <label></label>
@@ -72,12 +77,17 @@ class XmlExporter
 
     /**
      * @param Relationship $relationship
+     * @param array $addAttributes
      * @return void
      */
-    public function exportRelationship(Relationship $relationship)
+    public function exportRelationship(Relationship $relationship, $addAttributes = [])
     {
         // <relationship>
         $this->writer->startElement('relationship');
+
+        foreach ($addAttributes as $name => $value) {
+            $this->writer->writeAttribute($name, $value);
+        }
 
         // <type></type>
         $this->writer->writeElement('type', $relationship->getType());
