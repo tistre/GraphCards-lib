@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<graph xmlns="https://topiccards.net/GraphCards/xmlns">
+    <node>
+        <label>User</label>
+        <label>Person</label>
+        <property key="name">
+            <value type="string">John Doe</value>
+        </property>
+        <property key="age">
+            <value type="integer">46</value>
+        </property>
+    </node>
+</graph>
