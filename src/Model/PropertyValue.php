@@ -9,6 +9,7 @@ class PropertyValue
     const TYPE_FLOAT = 'float';
     const TYPE_STRING = 'string';
     const TYPE_BOOLEAN = 'boolean';
+    // TODO: Add time, localtime, datetime, localdatetime, duration
 
     protected $types = [
         self::TYPE_INTEGER,

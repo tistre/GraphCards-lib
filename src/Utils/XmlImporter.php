@@ -16,6 +16,8 @@ class XmlImporter
      */
     public function importNode(\DOMElement $domNode): Node
     {
+        // TODO: How to update ("upsert")?
+
         /*
         Example:
 
