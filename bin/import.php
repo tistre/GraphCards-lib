@@ -73,7 +73,9 @@ class ImportScript
     {
         ?>
 
-        Usage: php bin/import.php \
+        Usage:
+
+        php bin/import.php \
         --defaultConnection=http://neo4j:secret@localhost:7474 \
         --boltConnection=bolt://neo4j:secret@localhost:7687 \
         examples/node.xml
