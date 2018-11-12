@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace GraphCards\Db;
 
@@ -22,6 +23,10 @@ class DbAdapter
     protected $collator;
 
 
+    /**
+     * DbAdapter constructor.
+     * @param Db $db
+     */
     public function __construct(Db $db)
     {
         $this->db = $db;
@@ -211,7 +216,7 @@ class DbAdapter
      * @param int $nodeId
      * @return Node
      */
-    protected function loadNodeById($nodeId): Node
+    protected function loadNodeById(int $nodeId): ?Node
     {
         $dbQuery = (new DbQuery())
             ->setQuery('MATCH (node) WHERE ID(node) = $id RETURN node')
@@ -235,13 +240,11 @@ class DbAdapter
             );
         }
 
-        $node = new Node();
-
         foreach ($qResult->records() as $record) {
-            $node = $this->loadNodeFromRecord($record->get('node'));
+            return $this->loadNodeFromRecord($record->get('node'));
         }
 
-        return $node;
+        return null;
     }
 
 
@@ -249,7 +252,7 @@ class DbAdapter
      * @param string $nodeId
      * @return string
      */
-    public function getNodeUuidById($nodeId): string
+    public function getNodeUuidById(string $nodeId): string
     {
         $dbQuery = (new DbQuery())
             ->setQuery('MATCH (node) WHERE ID(node) = $id RETURN node.uuid')
@@ -287,7 +290,7 @@ class DbAdapter
      * @param string $nodeUuid
      * @return Node
      */
-    public function loadNode($nodeUuid): Node
+    public function loadNode(string $nodeUuid): ?Node
     {
         $dbQuery = (new DbQuery())
             ->setQuery('MATCH (node { uuid: {uuid} }) RETURN node')
@@ -311,18 +314,16 @@ class DbAdapter
             );
         }
 
-        $node = new Node();
-
         foreach ($qResult->records() as $record) {
-            $node = $this->loadNodeFromRecord($record->get('node'));
+            return $this->loadNodeFromRecord($record->get('node'));
         }
 
-        return $node;
+        return null;
     }
 
 
     /**
-     * @param $recordNode
+     * @param \GraphAware\Neo4j\Client\Formatter\Type\Node $recordNode
      * @return Node
      */
     protected function loadNodeFromRecord(\GraphAware\Neo4j\Client\Formatter\Type\Node $recordNode): Node
@@ -379,7 +380,7 @@ class DbAdapter
      * @param string $nodeUuid
      * @return void
      */
-    public function deleteNode($nodeUuid)
+    public function deleteNode(string $nodeUuid): void
     {
         $dbQuery = (new DbQuery())
             ->setQuery('MATCH (node { uuid: {uuid} }) DELETE node')
@@ -465,7 +466,7 @@ class DbAdapter
      * @param string $relationshipUuid
      * @return Relationship
      */
-    public function loadRelationship($relationshipUuid): Relationship
+    public function loadRelationship(string $relationshipUuid): Relationship
     {
         $dbQuery = (new DbQuery())
             ->setQuery('MATCH ()-[relationship { uuid: {uuid} }]->() RETURN relationship')
@@ -489,13 +490,11 @@ class DbAdapter
             );
         }
 
-        $relationship = new Node();
-
         foreach ($qResult->records() as $record) {
-            $relationship = $this->loadRelationshipFromRecord($record->get('relationship'));
+            return $this->loadRelationshipFromRecord($record->get('relationship'));
         }
 
-        return $relationship;
+        return null;
     }
 
 
@@ -503,7 +502,7 @@ class DbAdapter
      * @param int $relationshipId
      * @return Relationship
      */
-    protected function loadRelationshipById($relationshipId): Relationship
+    protected function loadRelationshipById(int $relationshipId): ?Relationship
     {
         $dbQuery = (new DbQuery())
             ->setQuery('MATCH ()-[rel]->() WHERE ID(rel) = $id RETURN rel')
@@ -527,18 +526,16 @@ class DbAdapter
             );
         }
 
-        $relationship = new Relationship();
-
         foreach ($qResult->records() as $record) {
-            $relationship = $this->loadRelationshipFromRecord($record->get('rel'));
+            return $this->loadRelationshipFromRecord($record->get('rel'));
         }
 
-        return $relationship;
+        return null;
     }
 
 
     /**
-     * @param $recordRelationship
+     * @param \GraphAware\Neo4j\Client\Formatter\Type\Relationship $recordRelationship
      * @return Relationship
      */
     protected function loadRelationshipFromRecord(
@@ -1016,7 +1013,7 @@ class DbAdapter
      * @param string[] $arr
      * @return void
      */
-    protected function sort(array &$arr)
+    protected function sort(array &$arr): void
     {
         if (!$this->collator) {
             // TODO: Fix hardcoded locale
