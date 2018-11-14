@@ -98,7 +98,7 @@ class XmlImporter
         foreach ($this->getChildrenByTagName($domNode,'property') as $domSubNode) {
             $property = $this->importProperty($domSubNode);
 
-            if ((strlen($property->getName()) === 0) || (strlen($property->getValue() === 0))) {
+            if ((strlen($property->getName()) === 0) || (count($property->getValues()) === 0)) {
                 continue;
             }
 
