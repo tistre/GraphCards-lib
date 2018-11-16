@@ -249,10 +249,10 @@ class DbAdapter
 
 
     /**
-     * @param string $nodeId
+     * @param int $nodeId
      * @return string
      */
-    public function getNodeUuidById(string $nodeId): string
+    public function getNodeUuidById(int $nodeId): string
     {
         $dbQuery = (new DbQuery())
             ->setQuery('MATCH (node) WHERE ID(node) = $id RETURN node.uuid')
