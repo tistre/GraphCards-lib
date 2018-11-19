@@ -111,28 +111,18 @@ class ExportScript
         $xmlExporter = new \GraphCards\Utils\XmlExporter('php://output');
         $xmlExporter->startDocument();
 
-        foreach ($this->dbAdapter->listResults($dbQuery) as $rowNum => $row) {
-            $rowData = [];
+        $dbResult = $this->dbAdapter->getResult($dbQuery);
 
-            foreach ($row as $columnName => $obj) {
-                if (is_object($obj)) {
-                    if ($obj instanceof \GraphCards\Model\Node) {
-                        $xmlExporter->exportNode($obj, ['rowNumber' => $rowNum, 'columnName' => $columnName]);
-                    } elseif ($obj instanceof \GraphCards\Model\Relationship) {
-                        $xmlExporter->exportRelationship($obj, ['rowNumber' => $rowNum, 'columnName' => $columnName]);
-                    } else {
-                        throw new \RuntimeException(
-                            sprintf(
-                                '%s: Unsupported object type <%s>.',
-                                __METHOD__,
-                                get_class($obj)
-                            )
-                        );
-                    }
-                } else {
-                    $rowData[$columnName] = (string)$obj;
-                }
+        foreach ($dbResult->getRecords() as $rowNum => $record) {
+            foreach ($record->getAllNodes() as $columnName => $node) {
+                $xmlExporter->exportNode($node, ['rowNumber' => $rowNum, 'columnName' => $columnName]);
             }
+
+            foreach ($record->getAllRelationships() as $columnName => $relationship) {
+                $xmlExporter->exportRelationship($relationship, ['rowNumber' => $rowNum, 'columnName' => $columnName]);
+            }
+
+            $rowData = $record->getAllValues();
 
             if (count($rowData) > 0) {
                 // <row>

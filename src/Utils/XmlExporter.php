@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace GraphCards\Utils;
 
@@ -58,7 +59,7 @@ class XmlExporter
         $this->writer->startElement('node');
 
         foreach ($addAttributes as $name => $value) {
-            $this->writer->writeAttribute($name, $value);
+            $this->writer->writeAttribute($name, (string)$value);
         }
 
         foreach ($node->getLabels() as $label) {
@@ -86,7 +87,7 @@ class XmlExporter
         $this->writer->startElement('relationship');
 
         foreach ($addAttributes as $name => $value) {
-            $this->writer->writeAttribute($name, $value);
+            $this->writer->writeAttribute($name, (string)$value);
         }
 
         // <type></type>

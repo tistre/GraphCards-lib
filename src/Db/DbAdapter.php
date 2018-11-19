@@ -214,7 +214,7 @@ class DbAdapter
 
     /**
      * @param int $nodeId
-     * @return Node
+     * @return Node|null
      */
     protected function loadNodeById(int $nodeId): ?Node
     {
@@ -225,7 +225,7 @@ class DbAdapter
         $this->db->logQuery($dbQuery);
 
         try {
-            $qResult = $this->db->runQuery($dbQuery);
+            $dbResult = new DbResult($this, $dbQuery, $this->db->runQuery($dbQuery));
         } catch (Neo4jExceptionInterface $exception) {
             $this->db->logException($exception);
             throw new \RuntimeException
@@ -240,11 +240,7 @@ class DbAdapter
             );
         }
 
-        foreach ($qResult->records() as $record) {
-            return $this->loadNodeFromRecord($record->get('node'));
-        }
-
-        return null;
+        return $dbResult->getFirstRecord()->getNode('node');
     }
 
 
@@ -288,7 +284,7 @@ class DbAdapter
 
     /**
      * @param string $nodeUuid
-     * @return Node
+     * @return Node|null
      */
     public function loadNode(string $nodeUuid): ?Node
     {
@@ -299,7 +295,7 @@ class DbAdapter
         $this->db->logQuery($dbQuery);
 
         try {
-            $qResult = $this->db->runQuery($dbQuery);
+            $dbResult = new DbResult($this, $dbQuery, $this->db->runQuery($dbQuery));
         } catch (Neo4jExceptionInterface $exception) {
             $this->db->logException($exception);
             throw new \RuntimeException
@@ -314,11 +310,7 @@ class DbAdapter
             );
         }
 
-        foreach ($qResult->records() as $record) {
-            return $this->loadNodeFromRecord($record->get('node'));
-        }
-
-        return null;
+        return $dbResult->getFirstRecord()->getNode('node');
     }
 
 
@@ -333,46 +325,10 @@ class DbAdapter
         $node->setLabels($recordNode->labels());
 
         foreach ($recordNode->values() as $name => $value) {
-            $node->setProperty($this->valueToProperty($name, $value));
+            $node->setProperty(DbUtils::propertyFromValue($name, $value));
         }
 
         return $node;
-    }
-
-
-    /**
-     * @param string $name
-     * @param int|float|bool|string|array $values
-     * @return Property
-     */
-    protected function valueToProperty(string $name, $values): Property
-    {
-        $property = (new Property())
-            ->setName($name);
-
-        if (!is_array($values)) {
-            $values = [$values];
-        }
-
-        foreach ($values as $value) {
-            if (is_int($value)) {
-                $type = PropertyValue::TYPE_INTEGER;
-            } elseif (is_float($value)) {
-                $type = PropertyValue::TYPE_FLOAT;
-            } elseif (is_bool($value)) {
-                $type = PropertyValue::TYPE_BOOLEAN;
-            } else {
-                $type = PropertyValue::TYPE_STRING;
-            }
-
-            $propertyValue = (new PropertyValue())
-                ->setType($type)
-                ->setValue($value);
-
-            $property->addValue($propertyValue);
-        }
-
-        return $property;
     }
 
 
@@ -416,7 +372,7 @@ class DbAdapter
         $this->db->logQuery($dbQuery);
 
         try {
-            $qResult = $this->db->runQuery($dbQuery);
+            $dbResult = new DbResult($this, $dbQuery, $this->db->runQuery($dbQuery));
         } catch (Neo4jExceptionInterface $exception) {
             $this->db->logException($exception);
             throw new \RuntimeException
@@ -431,8 +387,12 @@ class DbAdapter
             );
         }
 
-        foreach ($qResult->records() as $record) {
-            $node = $this->loadNodeFromRecord($record->get('node'));
+        foreach ($dbResult->getRecords() as $record) {
+            $node = $record->getNode('node');
+
+            if ($node === null) {
+                continue;
+            }
 
             if (strlen($node->getUuid()) === 0) {
                 continue;
@@ -464,9 +424,9 @@ class DbAdapter
 
     /**
      * @param string $relationshipUuid
-     * @return Relationship
+     * @return Relationship|null
      */
-    public function loadRelationship(string $relationshipUuid): Relationship
+    public function loadRelationship(string $relationshipUuid): ?Relationship
     {
         $dbQuery = (new DbQuery())
             ->setQuery('MATCH ()-[relationship { uuid: {uuid} }]->() RETURN relationship')
@@ -475,7 +435,7 @@ class DbAdapter
         $this->db->logQuery($dbQuery);
 
         try {
-            $qResult = $this->db->runQuery($dbQuery);
+            $dbResult = new DbResult($this, $dbQuery, $this->db->runQuery($dbQuery));
         } catch (Neo4jExceptionInterface $exception) {
             $this->db->logException($exception);
             throw new \RuntimeException
@@ -490,17 +450,13 @@ class DbAdapter
             );
         }
 
-        foreach ($qResult->records() as $record) {
-            return $this->loadRelationshipFromRecord($record->get('relationship'));
-        }
-
-        return null;
+        return $dbResult->getFirstRecord()->getRelationship('relationship');
     }
 
 
     /**
      * @param int $relationshipId
-     * @return Relationship
+     * @return Relationship|null
      */
     protected function loadRelationshipById(int $relationshipId): ?Relationship
     {
@@ -511,7 +467,7 @@ class DbAdapter
         $this->db->logQuery($dbQuery);
 
         try {
-            $qResult = $this->db->runQuery($dbQuery);
+            $dbResult = new DbResult($this, $dbQuery, $this->db->runQuery($dbQuery));
         } catch (Neo4jExceptionInterface $exception) {
             $this->db->logException($exception);
             throw new \RuntimeException
@@ -526,38 +482,7 @@ class DbAdapter
             );
         }
 
-        foreach ($qResult->records() as $record) {
-            return $this->loadRelationshipFromRecord($record->get('rel'));
-        }
-
-        return null;
-    }
-
-
-    /**
-     * @param \GraphAware\Neo4j\Client\Formatter\Type\Relationship $recordRelationship
-     * @return Relationship
-     */
-    protected function loadRelationshipFromRecord(
-        \GraphAware\Neo4j\Client\Formatter\Type\Relationship $recordRelationship
-    ): Relationship {
-        $relationship = new Relationship();
-
-        $sourceNode = (new Node())
-            ->setUuid($this->getNodeUuidById($recordRelationship->startNodeIdentity()));
-
-        $targetNode = (new Node())
-            ->setUuid($this->getNodeUuidById($recordRelationship->endNodeIdentity()));
-
-        $relationship->setType($recordRelationship->type());
-        $relationship->setSourceNode($sourceNode);
-        $relationship->setTargetNode($targetNode);
-
-        foreach ($recordRelationship->values() as $name => $value) {
-            $relationship->setProperty($this->valueToProperty($name, $value));
-        }
-
-        return $relationship;
+        return $dbResult->getFirstRecord()->getRelationship('rel');
     }
 
 
@@ -572,7 +497,7 @@ class DbAdapter
         $this->db->logQuery($dbQuery);
 
         try {
-            $qResult = $this->db->runQuery($dbQuery);
+            $dbResult = new DbResult($this, $dbQuery, $this->db->runQuery($dbQuery));
         } catch (Neo4jExceptionInterface $exception) {
             $this->db->logException($exception);
             throw new \RuntimeException
@@ -587,9 +512,13 @@ class DbAdapter
             );
         }
 
-        foreach ($qResult->records() as $record) {
-            $relationship = $this->loadRelationshipFromRecord($record->get('r'));
+        foreach ($dbResult->getRecords() as $record) {
+            $relationship = $record->getRelationship('r');
 
+            if ($relationship === null) {
+                continue;
+
+            }
             if (strlen($relationship->getUuid()) === 0) {
                 continue;
             }
@@ -628,7 +557,7 @@ class DbAdapter
         $this->db->logQuery($dbQuery);
 
         try {
-            $qResult = $this->db->runQuery($dbQuery);
+            $dbResult = new DbResult($this, $dbQuery, $this->db->runQuery($dbQuery));
         } catch (Neo4jExceptionInterface $exception) {
             $this->db->logException($exception);
             throw new \RuntimeException
@@ -643,8 +572,12 @@ class DbAdapter
             );
         }
 
-        foreach ($qResult->records() as $record) {
-            $relationship = $this->loadRelationshipFromRecord($record->get('r'));
+        foreach ($dbResult->getRecords() as $record) {
+            $relationship = $record->getRelationship('r');
+
+            if ($relationship === null) {
+                continue;
+            }
 
             if (strlen($relationship->getUuid()) === 0) {
                 continue;
@@ -956,15 +889,15 @@ class DbAdapter
 
     /**
      * @param DbQuery $dbQuery
-     * @return array
+     * @return DbResult
      */
-    public function listResults(DbQuery $dbQuery): array
+    public function getResult(DbQuery $dbQuery): DbResult
     {
         $rows = [];
         $this->db->logQuery($dbQuery);
 
         try {
-            $qResult = $this->db->runQuery($dbQuery);
+            $dbResult = new DbResult($this, $dbQuery, $this->db->runQuery($dbQuery));
         } catch (Neo4jExceptionInterface $exception) {
             $this->db->logException($exception);
             throw new \RuntimeException(
@@ -977,35 +910,7 @@ class DbAdapter
             );
         }
 
-        foreach ($qResult->records() as $record) {
-            $row = [];
-
-            foreach ($record->keys() as $key) {
-                $value = $record->get($key);
-
-                if (is_object($value)) {
-                    if ($value instanceof \GraphAware\Neo4j\Client\Formatter\Type\Node) {
-                        $row[$key] = $this->loadNodeFromRecord($value);
-                    } elseif ($value instanceof \GraphAware\Neo4j\Client\Formatter\Type\Relationship) {
-                        $row[$key] = $this->loadRelationshipFromRecord($value);
-                    } else {
-                        throw new \RuntimeException(
-                            sprintf(
-                                '%s: Unsupported record type <%s>.',
-                                __METHOD__,
-                                get_class($value)
-                            )
-                        );
-                    }
-                } else {
-                    $row[$key] = $value;
-                }
-            }
-
-            $rows[] = $row;
-        }
-
-        return $rows;
+        return $dbResult;
     }
 
 

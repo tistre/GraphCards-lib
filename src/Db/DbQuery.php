@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace GraphCards\Db;
 
@@ -10,6 +11,18 @@ class DbQuery
 
     /** @var array */
     public $bind = [];
+
+
+    /**
+     * DbQuery constructor.
+     * @param string $query
+     * @param array $bind
+     */
+    public function __construct(string $query = '', array $bind = [])
+    {
+        $this->setQuery($query);
+        $this->setBind($bind);
+    }
 
 
     /**

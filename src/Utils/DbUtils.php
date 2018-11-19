@@ -1,6 +1,10 @@
 <?php
+declare(strict_types=1);
 
 namespace GraphCards\Utils;
+
+use GraphCards\Model\Property;
+use GraphCards\Model\PropertyValue;
 
 
 class DbUtils
@@ -113,6 +117,42 @@ class DbUtils
         }
 
         return $result;
+    }
+
+
+    /**
+     * @param string $name
+     * @param int|float|bool|string|array $values
+     * @return Property
+     */
+    public static function propertyFromValue(string $name, $values): Property
+    {
+        $property = (new Property())
+            ->setName($name);
+
+        if (!is_array($values)) {
+            $values = [$values];
+        }
+
+        foreach ($values as $value) {
+            if (is_int($value)) {
+                $type = PropertyValue::TYPE_INTEGER;
+            } elseif (is_float($value)) {
+                $type = PropertyValue::TYPE_FLOAT;
+            } elseif (is_bool($value)) {
+                $type = PropertyValue::TYPE_BOOLEAN;
+            } else {
+                $type = PropertyValue::TYPE_STRING;
+            }
+
+            $propertyValue = (new PropertyValue())
+                ->setType($type)
+                ->setValue($value);
+
+            $property->addValue($propertyValue);
+        }
+
+        return $property;
     }
 
 
