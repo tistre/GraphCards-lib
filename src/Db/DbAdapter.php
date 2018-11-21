@@ -310,6 +310,10 @@ class DbAdapter
             );
         }
 
+        if ($dbResult->isEmpty()) {
+            return null;
+        }
+
         return $dbResult->getFirstRecord()->getNode('node');
     }
 

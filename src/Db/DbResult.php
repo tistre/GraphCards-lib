@@ -40,15 +40,33 @@ class DbResult
 
 
     /**
+     * @return int
+     */
+    public function getRecordCount(): int
+    {
+        return $this->neo4jResult->size();
+    }
+
+
+    /**
+     * @return bool
+     */
+    public function isEmpty(): bool
+    {
+        return ($this->neo4jResult->size() < 1);
+    }
+
+
+    /**
      * @return DbRecord|null
      */
     public function getFirstRecord(): ?DbRecord
     {
-        if ($this->neo4jResult->size() < 1) {
+        if ($this->isEmpty()) {
             return null;
         }
 
-        return new DbRecord($this, $this->result->firstRecord());
+        return new DbRecord($this, $this->neo4jResult->firstRecord());
     }
 
 
