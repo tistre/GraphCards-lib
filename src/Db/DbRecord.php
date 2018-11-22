@@ -60,6 +60,23 @@ class DbRecord
 
 
     /**
+     * @return Node[]
+     */
+    public function getAllNodes(): array
+    {
+        $this->readAllRecords();
+
+        $result = [];
+
+        foreach ($this->allRecords['node'] as $neo4jNode) {
+            $result[] = $this->nodeFromNeo4jNode($neo4jNode);
+        }
+
+        return $result;
+    }
+
+
+    /**
      * @param \GraphAware\Neo4j\Client\Formatter\Type\Node $neo4jNode
      * @return Node
      */
@@ -104,6 +121,23 @@ class DbRecord
 
 
     /**
+     * @return Relationship[]
+     */
+    public function getAllRelationships(): array
+    {
+        $this->readAllRecords();
+
+        $result = [];
+
+        foreach ($this->allRecords['relationship'] as $neo4jRelationship) {
+            $result[] = $this->relationshipFromNeo4jRelationship($neo4jRelationship);
+        }
+
+        return $result;
+    }
+
+
+    /**
      * @param \GraphAware\Neo4j\Client\Formatter\Type\Relationship $neo4jRelationship
      * @return Relationship
      */
@@ -129,36 +163,18 @@ class DbRecord
 
 
     /**
-     * @return Node[]
+     * @param string $key
+     * @return mixed
      */
-    public function getAllNodes(): array
+    public function getValue(string $key)
     {
         $this->readAllRecords();
 
-        $result = [];
-
-        foreach ($this->allRecords['node'] as $neo4jNode) {
-            $result[] = $this->nodeFromNeo4jNode($neo4jNode);
+        if (isset($this->allRecords['value'][$key])) {
+            return $this->allRecords['value'][$key];
         }
 
-        return $result;
-    }
-
-
-    /**
-     * @return Relationship[]
-     */
-    public function getAllRelationships(): array
-    {
-        $this->readAllRecords();
-
-        $result = [];
-
-        foreach ($this->allRecords['relationship'] as $neo4jRelationship) {
-            $result[] = $this->relationshipFromNeo4jRelationship($neo4jRelationship);
-        }
-
-        return $result;
+        return null;
     }
 
 
