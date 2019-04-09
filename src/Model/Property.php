@@ -77,7 +77,7 @@ class Property
      */
     public function addValue(PropertyValue $propertyValue): self
     {
-        if (strlen(trim($propertyValue->getValue())) > 0) {
+        if (!$propertyValue->isEmpty()) {
             $this->values[] = $propertyValue;
         }
 

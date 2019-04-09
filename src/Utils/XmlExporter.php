@@ -126,7 +126,7 @@ class XmlExporter
             // <value></value>
             $this->writer->startElement('value');
             $this->writer->writeAttribute('type', $propertyValue->getType());
-            $this->writer->text($propertyValue->getValue());
+            $this->writer->text((string)$propertyValue->getValue());
             $this->writer->endElement();
         }
 

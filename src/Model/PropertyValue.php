@@ -47,6 +47,23 @@ class PropertyValue
 
 
     /**
+     * @return bool
+     */
+    public function isEmpty(): bool
+    {
+        if ($this->value === null) {
+            return true;
+        }
+
+        if (($this->getType() === self::TYPE_STRING) && (strlen(trim($this->value)) === 0)) {
+            return true;
+        }
+
+        return false;
+    }
+
+
+    /**
      * @return string
      */
     public function getType(): string
