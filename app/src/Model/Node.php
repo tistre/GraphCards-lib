@@ -1,5 +1,4 @@
 <?php
-declare(strict_types=1);
 
 namespace GraphCards\Model;
 
@@ -7,10 +6,10 @@ namespace GraphCards\Model;
 class Node
 {
     /** @var string[] */
-    protected $labels = [];
+    protected array $labels = [];
 
     /** @var Property[] */
-    protected $properties = [];
+    protected array $properties = [];
 
 
     /**

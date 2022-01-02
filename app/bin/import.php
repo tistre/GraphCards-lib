@@ -1,18 +1,18 @@
 <?php
 
+use Psr\Log\LoggerInterface;
+
 require dirname(__DIR__) . '/vendor/autoload.php';
 
 
 class ImportScript
 {
-    /** @var array */
-    protected $options = [];
+    protected array $options = [];
 
     /** @var string[] */
-    protected $inputFiles = [];
+    protected array $inputFiles = [];
 
-    /** @var \Psr\Log\LoggerInterface */
-    protected $logger;
+    protected LoggerInterface $logger;
 
     /** @var \GraphCards\Db\DbConfig */
     protected $dbConfig;

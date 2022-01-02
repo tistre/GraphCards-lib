@@ -1,16 +1,14 @@
 <?php
-declare(strict_types=1);
 
 namespace GraphCards\Model;
 
 
 class Property
 {
-    /** @var string */
-    protected $name;
+    protected string $name;
 
     /** @var PropertyValue[] */
-    protected $values = [];
+    protected array $values = [];
 
 
     /**

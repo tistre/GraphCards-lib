@@ -12,9 +12,9 @@
     ],
     "require": 
     {
-        "php": ">=7.1.0",
+        "php": ">=7.4.0",
         "ext-intl": "*",
-        "graphaware/neo4j-php-client": "^4.8",
+        "stefanak-michal/bolt": "^2.1",
         "monolog/monolog": "^1.23"
     },
     "autoload": {
